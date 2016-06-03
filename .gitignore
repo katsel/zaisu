@@ -1,0 +1,15 @@
+*.beam
+*.o
+*.plt
+.concrete/DEV_MODE
+.erlang.mk
+.eunit
+.rebar
+_rel
+deps
+ebin
+erl_crash.dump
+rel/
+relx
+relx.config
+zaisu.d
