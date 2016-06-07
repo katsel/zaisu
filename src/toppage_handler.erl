@@ -1,3 +1,6 @@
+
+
+%% @doc Zaisu handler.
 -module(toppage_handler).
 
 %% Standard callbacks
@@ -6,7 +9,7 @@
 -export([content_types_provided/2]).
 
 %% Custom callbacks
--export([hello_to_text/2]).
+-export([content_to_json/2]).
 
 init(Req, State) ->
 	{cowboy_rest, Req, State}.
@@ -16,8 +19,9 @@ allowed_methods(Req, State) ->
 
 content_types_provided(Req, State) ->
 	{[
-		{<<"text/plain">>, hello_to_text}
+		{<<"application/json">>, content_to_json}, % JSON content
+		{<<"text/plain">>, content_to_json}  % same content declared as text
 	], Req, State}.
 
-hello_to_text(Req, State) ->
-	{<<"{\"zaisu\": \"Welcome\"}">>, Req, State}.
+content_to_json(Req, State) ->
+	{<<"{\"zaisu\": \"Welcome\"}\n">>, Req, State}.

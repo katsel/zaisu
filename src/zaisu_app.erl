@@ -1,8 +1,14 @@
+%
+
+%% @private
 -module(zaisu_app).
 -behaviour(application).
 
+%% API.
 -export([start/2]).
 -export([stop/1]).
+
+%% API.
 
 start(_Type, _Args) ->
 	Dispatch = cowboy_router:compile([
