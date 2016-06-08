@@ -18,8 +18,8 @@
     "(\\.[0-9]{10,})?$"  % but allow an optional shard timestamp at the end
 ).
 
-init(Req, State) ->
-	{cowboy_rest, Req, State}.
+init(Req, DbList) ->
+	{cowboy_rest, Req, DbList}.
 
 allowed_methods(Req, State) ->
 	{[<<"GET">>, <<"POST">>], Req, State}.
@@ -30,14 +30,14 @@ content_types_provided(Req, State) ->
 		{<<"application/json">>, content_to_json}  % JSON content as JSON
 	], Req, State}.
 
-resource_exists(Req, _State) ->
+resource_exists(Req, DbList) ->
 	case cowboy_req:binding(db_name, Req) of
 		undefined ->
 			{true, Req, index};
 		DbName ->
 			case validate_dbname(DbName) of
 				ok ->
-					case db_exists(DbName) of
+					case db_exists(DbName, DbList) of
 						true -> {true, Req, DbName};
 						false -> {false, Req, DbName}
 					end;
@@ -56,8 +56,8 @@ content_to_json(Req, DbName) ->
 
 % Private
 
-db_exists(_DbName) ->
-	true.
+db_exists(DbName, DbList) ->
+	lists:member(DbName, DbList).
 
 illegal_dbname_warning(DbName) ->
 	<<"{\"error\":\"illegal_database_name\",\"reason\":\"Name: '",
