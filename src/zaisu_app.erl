@@ -14,7 +14,7 @@ start(_Type, _Args) ->
 	Dispatch = cowboy_router:compile([
 		%% {HostMatch, list({PathMatch, Handler, Opts})}
 		{'_', [
-			{"/", toppage_handler, []}
+			{"/[:db_name]", toppage_handler, []}
 		]}
 	]),
 	{ok, _} = cowboy:start_clear(my_http_listener, 100, [{port, 8080}],
