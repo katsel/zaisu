@@ -6,11 +6,14 @@
 %% Standard callbacks
 -export([init/2]).
 -export([allowed_methods/2]).
+-export([content_types_accepted/2]).
 -export([content_types_provided/2]).
+-export([is_conflict/2]).
 -export([resource_exists/2]).
 
 %% Custom callbacks
 -export([content_to_json/2]).
+-export([from_generic/2]).
 
 % valid database name
 -define(DBNAME_REGEX,
@@ -22,7 +25,12 @@ init(Req, DbList) ->
 	{cowboy_rest, Req, DbList}.
 
 allowed_methods(Req, State) ->
-	{[<<"GET">>, <<"POST">>], Req, State}.
+	{[<<"GET">>, <<"PUT">>], Req, State}.
+
+content_types_accepted(Req, State) ->
+	{[
+		{'*', from_generic}
+	], Req, State}.
 
 content_types_provided(Req, State) ->
 	{[
@@ -38,23 +46,41 @@ resource_exists(Req, DbList) ->
 			case validate_dbname(DbName) of
 				ok ->
 					case db_exists(DbName, DbList) of
-						true -> {true, Req, DbName};
-						false -> {false, Req, DbName}
+						true -> {true, Req, DbList};
+						false -> {false, Req, DbList}
 					end;
 				_ ->
 				Req2 = cowboy_req:reply(400, #{},  % 400 Bad Request
 					illegal_dbname_warning(DbName), Req),
-				{false, Req2, invalidDbName}
+				{false, Req2, DbList}
 			end
 	end.
 
 
 content_to_json(Req, index) ->
 	{<<"{\"zaisu\": \"Welcome\"}\n">>, Req, index};
-content_to_json(Req, DbName) ->
-	{<<"{\"db_name\": \"",DbName/binary,"\"}\n">>, Req, DbName}.
+content_to_json(Req, DbList) ->
+	DbName = cowboy_req:binding(db_name, Req),
+	{<<"{\"db_name\": \"",DbName/binary,"\"}\n">>, Req, DbList}.
+
+from_generic(Req, DbList) ->
+	DbName = cowboy_req:binding(db_name, Req),
+	NewDbList = create_database(DbName, DbList),
+	Req2 = cowboy_req:reply(201, #{},
+		<<"{\"ok\":true}\n">>, Req),
+	{true, Req2, NewDbList}.
+
+is_conflict(Req, DbList) ->
+	DbName = cowboy_req:binding(db_name, Req),
+	case db_exists(DbName, DbList) of
+		true -> {true, Req, DbList};
+		false -> {false, Req, DbList}
+	end.
 
 % Private
+
+create_database(DbName, DbList) ->
+	[DbName|DbList].
 
 db_exists(DbName, DbList) ->
 	lists:member(DbName, DbList).
