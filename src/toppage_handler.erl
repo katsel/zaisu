@@ -14,8 +14,8 @@
 
 % valid database name
 -define(DBNAME_REGEX,
-    "^[a-z][a-z0-9\\_\\$()\\+\\-\\/]*"  % use the stock CouchDB regex
-    "(\\.[0-9]{10,})?$"  % but allow an optional shard timestamp at the end
+	"^[a-z][a-z0-9\\_\\$()\\+\\-\\/]*"  % use the stock CouchDB regex
+	"(\\.[0-9]{10,})?$"  % but allow an optional shard timestamp at the end
 ).
 
 init(Req, DbList) ->
@@ -67,10 +67,10 @@ illegal_dbname_warning(DbName) ->
 	"Must begin with a letter.\"}\n">>.
 
 validate_dbname(DbName) when is_binary(DbName) ->
-    case re:run(DbName, ?DBNAME_REGEX, [{capture,none}, dollar_endonly]) of
-        match ->
-            ok;
-        nomatch ->
+	case re:run(DbName, ?DBNAME_REGEX, [{capture,none}, dollar_endonly]) of
+		match ->
+			ok;
+		nomatch ->
 			{error, {illegal_database_name, DbName}}
 			%% ignore systemdbs for now
-    end.
+	end.
