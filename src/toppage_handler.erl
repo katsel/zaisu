@@ -65,10 +65,10 @@ content_to_json(Req, DbList) ->
 
 from_generic(Req, DbList) ->
 	DbName = cowboy_req:binding(db_name, Req),
-	NewDbList = create_database(DbName, DbList),
+	create_database(DbName, DbList),
 	Req2 = cowboy_req:reply(201, #{},
 		<<"{\"ok\":true}\n">>, Req),
-	{true, Req2, NewDbList}.
+	{true, Req2, DbName}.
 
 is_conflict(Req, DbList) ->
 	DbName = cowboy_req:binding(db_name, Req),
@@ -80,10 +80,10 @@ is_conflict(Req, DbList) ->
 % Private
 
 create_database(DbName, DbList) ->
-	[DbName|DbList].
+	ets:insert_new(DbList, {DbName}).
 
 db_exists(DbName, DbList) ->
-	lists:member(DbName, DbList).
+	ets:member(DbList, DbName).
 
 illegal_dbname_warning(DbName) ->
 	<<"{\"error\":\"illegal_database_name\",\"reason\":\"Name: '",

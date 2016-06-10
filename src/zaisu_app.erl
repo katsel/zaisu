@@ -11,7 +11,7 @@
 %% API.
 
 start(_Type, _Args) ->
-	DbList = [<<"abc">>],
+	DbList = ets:new(database_list, [set, named_table, public]),
 	Dispatch = cowboy_router:compile([
 		%% {HostMatch, list({PathMatch, Handler, Opts})}
 		{'_', [
