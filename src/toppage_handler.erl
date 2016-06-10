@@ -8,6 +8,8 @@
 -export([allowed_methods/2]).
 -export([content_types_accepted/2]).
 -export([content_types_provided/2]).
+-export([delete_completed/2]).
+-export([delete_resource/2]).
 -export([is_conflict/2]).
 -export([resource_exists/2]).
 
@@ -25,7 +27,7 @@ init(Req, DbList) ->
 	{cowboy_rest, Req, DbList}.
 
 allowed_methods(Req, State) ->
-	{[<<"GET">>, <<"PUT">>], Req, State}.
+	{[<<"GET">>, <<"PUT">>, <<"DELETE">>], Req, State}.
 
 content_types_accepted(Req, State) ->
 	{[
@@ -37,6 +39,15 @@ content_types_provided(Req, State) ->
 		{<<"text/plain">>, content_to_json},       % JSON content as plaintext
 		{<<"application/json">>, content_to_json}  % JSON content as JSON
 	], Req, State}.
+
+delete_completed(Req, DbList) ->
+	Req2 = cowboy_req:reply(200, #{},
+	<<"{\"ok\":true}\n">>, Req),
+	{true, Req2, DbList}.
+
+delete_resource(Req, DbList) ->
+	DbName = cowboy_req:binding(db_name, Req),
+	{delete_database(DbName, DbList), Req, DbList}.
 
 resource_exists(Req, DbList) ->
 	case cowboy_req:binding(db_name, Req) of
@@ -84,6 +95,9 @@ create_database(DbName, DbList) ->
 
 db_exists(DbName, DbList) ->
 	ets:member(DbList, DbName).
+
+delete_database(DbName, DbList) ->
+	ets:delete(DbList, DbName).
 
 illegal_dbname_warning(DbName) ->
 	<<"{\"error\":\"illegal_database_name\",\"reason\":\"Name: '",
