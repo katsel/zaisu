@@ -1,5 +1,3 @@
-%
-
 %% @private
 -module(zaisu_app).
 -behaviour(application).
@@ -15,7 +13,8 @@ start(_Type, _Args) ->
 	Dispatch = cowboy_router:compile([
 		%% {HostMatch, list({PathMatch, Handler, Opts})}
 		{'_', [
-			{"/[:db_name]", toppage_handler, DbList}
+			{"/", index_handler, []},
+			{"/:db_name", db_handler, DbList}
 		]}
 	]),
 	{ok, _} = cowboy:start_clear(my_http_listener, 100, [{port, 8080}],

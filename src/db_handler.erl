@@ -1,7 +1,5 @@
-
-
-%% @doc Zaisu handler.
--module(toppage_handler).
+%% @doc Database handler.
+-module(db_handler).
 
 %% Standard callbacks
 -export([init/2]).
@@ -49,27 +47,28 @@ delete_resource(Req, DbList) ->
 	DbName = cowboy_req:binding(db_name, Req),
 	{delete_database(DbName, DbList), Req, DbList}.
 
+is_conflict(Req, DbList) ->
+	DbName = cowboy_req:binding(db_name, Req),
+	case db_exists(DbName, DbList) of
+		true -> {true, Req, DbList};
+		false -> {false, Req, DbList}
+	end.
+
 resource_exists(Req, DbList) ->
-	case cowboy_req:binding(db_name, Req) of
-		undefined ->
-			{true, Req, index};
-		DbName ->
-			case validate_dbname(DbName) of
-				ok ->
-					case db_exists(DbName, DbList) of
-						true -> {true, Req, DbList};
-						false -> {false, Req, DbList}
-					end;
-				_ ->
-				Req2 = cowboy_req:reply(400, #{},  % 400 Bad Request
-					illegal_dbname_warning(DbName), Req),
-				{false, Req2, DbList}
-			end
+	DbName = cowboy_req:binding(db_name, Req),
+	case validate_dbname(DbName) of
+		ok ->
+			case db_exists(DbName, DbList) of
+				true -> {true, Req, DbList};
+				false -> {false, Req, DbList}
+			end;
+		_ ->
+		Req2 = cowboy_req:reply(400, #{},  % 400 Bad Request
+			illegal_dbname_warning(DbName), Req),
+		{false, Req2, DbList}
 	end.
 
 
-content_to_json(Req, index) ->
-	{<<"{\"zaisu\": \"Welcome\"}\n">>, Req, index};
 content_to_json(Req, DbList) ->
 	DbName = cowboy_req:binding(db_name, Req),
 	{<<"{\"db_name\": \"",DbName/binary,"\"}\n">>, Req, DbList}.
@@ -80,13 +79,6 @@ from_generic(Req, DbList) ->
 	Req2 = cowboy_req:reply(201, #{},
 		<<"{\"ok\":true}\n">>, Req),
 	{true, Req2, DbName}.
-
-is_conflict(Req, DbList) ->
-	DbName = cowboy_req:binding(db_name, Req),
-	case db_exists(DbName, DbList) of
-		true -> {true, Req, DbList};
-		false -> {false, Req, DbList}
-	end.
 
 % Private
 
