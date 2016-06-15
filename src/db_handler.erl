@@ -12,8 +12,8 @@
 -export([resource_exists/2]).
 
 %% Custom callbacks
--export([content_to_json/2]).
--export([from_generic/2]).
+-export([dbinfo_to_json/2]).
+-export([create_database/2]).
 
 % valid database name
 -define(DBNAME_REGEX,
@@ -29,13 +29,13 @@ allowed_methods(Req, State) ->
 
 content_types_accepted(Req, State) ->
 	{[
-		{'*', from_generic}
+		{'*', create_database}
 	], Req, State}.
 
 content_types_provided(Req, State) ->
 	{[
-		{<<"text/plain">>, content_to_json},       % JSON content as plaintext
-		{<<"application/json">>, content_to_json}  % JSON content as JSON
+		{<<"text/plain">>, dbinfo_to_json},       % JSON content as plaintext
+		{<<"application/json">>, dbinfo_to_json}  % JSON content as JSON
 	], Req, State}.
 
 delete_completed(Req, DbList) ->
@@ -49,7 +49,7 @@ delete_resource(Req, DbList) ->
 
 is_conflict(Req, DbList) ->
 	DbName = cowboy_req:binding(db_name, Req),
-	case db_exists(DbName, DbList) of
+	case database_exists(DbName, DbList) of
 		true -> {true, Req, DbList};
 		false -> {false, Req, DbList}
 	end.
@@ -58,7 +58,7 @@ resource_exists(Req, DbList) ->
 	DbName = cowboy_req:binding(db_name, Req),
 	case validate_dbname(DbName) of
 		ok ->
-			case db_exists(DbName, DbList) of
+			case database_exists(DbName, DbList) of
 				true -> {true, Req, DbList};
 				false -> {false, Req, DbList}
 			end;
@@ -69,23 +69,23 @@ resource_exists(Req, DbList) ->
 	end.
 
 
-content_to_json(Req, DbList) ->
+dbinfo_to_json(Req, DbList) ->
 	DbName = cowboy_req:binding(db_name, Req),
 	{<<"{\"db_name\": \"",DbName/binary,"\"}\n">>, Req, DbList}.
 
-from_generic(Req, DbList) ->
+create_database(Req, DbList) ->
 	DbName = cowboy_req:binding(db_name, Req),
-	create_database(DbName, DbList),
+	add_database(DbName, DbList),
 	Req2 = cowboy_req:reply(201, #{},
 		<<"{\"ok\":true}\n">>, Req),
 	{true, Req2, DbName}.
 
 % Private
 
-create_database(DbName, DbList) ->
+add_database(DbName, DbList) ->
 	ets:insert_new(DbList, {DbName}).
 
-db_exists(DbName, DbList) ->
+database_exists(DbName, DbList) ->
 	ets:member(DbList, DbName).
 
 delete_database(DbName, DbList) ->
