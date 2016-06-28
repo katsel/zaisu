@@ -13,7 +13,7 @@ start_stop_test_() ->
             setup,
             fun start/0, fun stop/1,
             fun(_) ->
-                is_sup_alive()
+                is_app_alive(zaisu_sup)
             end
         }
     }.
@@ -33,8 +33,8 @@ stop(_) ->
 hello_test() ->
     ok.
 
-is_sup_alive() ->
-    Pid = whereis(zaisu_sup),
+is_app_alive(App) ->
+    Pid = whereis(App),
     ?_assert(erlang:is_process_alive(Pid)).
 
 
