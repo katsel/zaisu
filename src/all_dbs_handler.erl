@@ -1,4 +1,4 @@
-%% @doc Index handler.
+%% @doc _all_dbs handler.
 -module(all_dbs_handler).
 
 %% Standard callbacks
