@@ -14,6 +14,7 @@ start(_Type, _Args) ->
 		%% {HostMatch, list({PathMatch, Handler, Opts})}
 		{'_', [
 			{"/", index_handler, []},
+			{"/_all_dbs", all_dbs_handler, DbList},
 			{"/:db_name", db_handler, DbList}
 		]}
 	]),
