@@ -17,8 +17,7 @@
 
 % valid database name
 -define(DBNAME_REGEX,
-	"^[a-z][a-z0-9\\_\\$()\\+\\-\\/]*"  % use the stock CouchDB regex
-	"(\\.[0-9]{10,})?$"  % but allow an optional shard timestamp at the end
+	"^[a-z][a-z0-9\\_\\$()\\+\\-\\/]*"  % stock CouchDB regex
 ).
 
 init(Req, DbList) ->
@@ -39,7 +38,7 @@ content_types_provided(Req, State) ->
 	], Req, State}.
 
 delete_completed(Req, DbList) ->
-	Req2 = cowboy_req:reply(200, #{},
+	Req2 = cowboy_req:reply(200, #{},  % 200 OK
 	<<"{\"ok\":true}\n">>, Req),
 	{true, Req2, DbList}.
 
@@ -76,7 +75,7 @@ dbinfo_to_json(Req, DbList) ->
 create_database(Req, DbList) ->
 	DbName = cowboy_req:binding(db_name, Req),
 	add_database(DbName, DbList),
-	Req2 = cowboy_req:reply(201, #{},
+	Req2 = cowboy_req:reply(201, #{},  % 201 Created
 		<<"{\"ok\":true}\n">>, Req),
 	{true, Req2, DbName}.
 
@@ -104,5 +103,4 @@ validate_dbname(DbName) when is_binary(DbName) ->
 			ok;
 		nomatch ->
 			{error, {illegal_database_name, DbName}}
-			%% ignore systemdbs for now
 	end.

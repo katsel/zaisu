@@ -16,7 +16,7 @@ init(Req, State) ->
 allowed_methods(Req, State) ->
     Req2 = cowboy_req:set_resp_body(
         <<"{\"error\":\"method_not_allowed\",",
-		  "\"reason\":\"Only GET,HEAD allowed\"}\n">>, Req),
+          "\"reason\":\"Only GET,HEAD allowed\"}\n">>, Req),
     {[<<"GET">>, <<"HEAD">>], Req2, State}.
 
 content_types_provided(Req, State) ->
@@ -28,6 +28,7 @@ content_types_provided(Req, State) ->
 
 all_dbs_to_json(Req, DbList) ->
     AllDbsAsList = lists:map(
+        % ets stores dbnames as bitstrings inside tuples. de-tuplify
         fun(X) -> {Y} = X, Y end,
         lists:usort(ets:tab2list(DbList))),
     Result = jiffy:encode(AllDbsAsList),
