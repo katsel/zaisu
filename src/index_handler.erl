@@ -11,20 +11,20 @@
 
 
 init(Req, State) ->
-	{cowboy_rest, Req, State}.
+    {cowboy_rest, Req, State}.
 
 allowed_methods(Req, State) ->
-	Req2 = cowboy_req:set_resp_body(
-		<<"{\"error\":\"method_not_allowed\",",
-		  "\"reason\":\"Only GET,HEAD allowed\"}\n">>, Req),
-	{[<<"GET">>, <<"HEAD">>], Req2, State}.
+    Req2 = cowboy_req:set_resp_body(
+        <<"{\"error\":\"method_not_allowed\",",
+          "\"reason\":\"Only GET,HEAD allowed\"}\n">>, Req),
+    {[<<"GET">>, <<"HEAD">>], Req2, State}.
 
 content_types_provided(Req, State) ->
-	{[
-		{<<"text/plain">>, index_to_json},       % JSON content as plaintext
-		{<<"application/json">>, index_to_json}  % JSON content as JSON
-	], Req, State}.
+    {[
+        {<<"text/plain">>, index_to_json},       % JSON content as plaintext
+        {<<"application/json">>, index_to_json}  % JSON content as JSON
+    ], Req, State}.
 
 
 index_to_json(Req, State) ->
-	{<<"{\"zaisu\": \"Welcome\"}\n">>, Req, State}.
+    {<<"{\"zaisu\": \"Welcome\"}\n">>, Req, State}.
