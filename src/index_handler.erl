@@ -14,9 +14,11 @@ init(Req, State) ->
     {cowboy_rest, Req, State}.
 
 allowed_methods(Req, State) ->
-    Req2 = cowboy_req:set_resp_body(
-        <<"{\"error\":\"method_not_allowed\",",
-          "\"reason\":\"Only GET,HEAD allowed\"}\n">>, Req),
+    Response = jiffy:encode({[
+        {error, method_not_allowed},
+        {reason, <<"Only GET,HEAD allowed">>}
+    ]}),
+    Req2 = cowboy_req:set_resp_body(<<Response/binary, "\n">>, Req),
     {[<<"GET">>, <<"HEAD">>], Req2, State}.
 
 content_types_provided(Req, State) ->
@@ -27,4 +29,5 @@ content_types_provided(Req, State) ->
 
 
 index_to_json(Req, State) ->
-    {<<"{\"zaisu\": \"Welcome\"}\n">>, Req, State}.
+    Response = jiffy:encode({[{zaisu, <<"Welcome">>}]}),
+    {<<Response/binary, "\n">>, Req, State}.

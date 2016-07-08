@@ -38,8 +38,9 @@ content_types_provided(Req, State) ->
     ], Req, State}.
 
 delete_completed(Req, DbList) ->
+    Response = jiffy:encode({[{ok, true}]}),
     Req2 = cowboy_req:reply(200, #{},  % 200 OK
-    <<"{\"ok\":true}\n">>, Req),
+    <<Response/binary, "\n">>, Req),
     {true, Req2, DbList}.
 
 delete_resource(Req, DbList) ->
@@ -70,13 +71,15 @@ resource_exists(Req, DbList) ->
 
 dbinfo_to_json(Req, DbList) ->
     DbName = cowboy_req:binding(db_name, Req),
-    {<<"{\"db_name\": \"",DbName/binary,"\"}\n">>, Req, DbList}.
+    Response = jiffy:encode({[{db_name, DbName}]}),
+    {<<Response/binary, "\n">>, Req, DbList}.
 
 create_database(Req, DbList) ->
     DbName = cowboy_req:binding(db_name, Req),
     add_database(DbName, DbList),
+    Response = jiffy:encode({[{ok, true}]}),
     Req2 = cowboy_req:reply(201, #{},  % 201 Created
-        <<"{\"ok\":true}\n">>, Req),
+        <<Response/binary, "\n">>, Req),
     {true, Req2, DbName}.
 
 % Private
@@ -91,11 +94,14 @@ delete_database(DbName, DbList) ->
     ets:delete(DbList, DbName).
 
 illegal_dbname_warning(DbName) ->
-    <<"{\"error\":\"illegal_database_name\",\"reason\":\"Name: '",
-    DbName/binary, "'. ",
-    "Only lowercase characters (a-z), digits (0-9), and any of the ",
-    "characters _, $, (, ), +, -, and / are allowed. ",
-    "Must begin with a letter.\"}\n">>.
+    Response = jiffy:encode({[
+        {error, illegal_database_name},
+        {reason, <<"Name: '", DbName/binary, "'. ",
+            "Only lowercase characters (a-z), digits (0-9), and any of the ",
+            "characters _, $, (, ), +, -, and / are allowed. ",
+            "Must begin with a letter.">>}
+    ]}),
+    <<Response/binary, "\n">>.
 
 validate_dbname(DbName) when is_binary(DbName) ->
     case re:run(DbName, ?DBNAME_REGEX, [{capture,none}, dollar_endonly]) of
