@@ -1,12 +1,12 @@
-%% @doc Index handler.
+%%% @doc Index handler.
 -module(index_handler).
 
-%% Standard callbacks
+%%% Standard callbacks
 -export([init/2]).
 -export([allowed_methods/2]).
 -export([content_types_provided/2]).
 
-%% Custom callbacks
+%%% Custom callbacks
 -export([index_to_json/2]).
 
 

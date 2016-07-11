@@ -1,7 +1,7 @@
-%% @doc Database handler.
+%%% @doc Database handler.
 -module(db_handler).
 
-%% Standard callbacks
+%%% Standard callbacks
 -export([init/2]).
 -export([allowed_methods/2]).
 -export([content_types_accepted/2]).
@@ -11,14 +11,15 @@
 -export([is_conflict/2]).
 -export([resource_exists/2]).
 
-%% Custom callbacks
+%%% Custom callbacks
 -export([dbinfo_to_json/2]).
--export([create_database/2]).
+-export([create_db/2]).
 
-% valid database name
+%% valid database name
 -define(DBNAME_REGEX,
     "^[a-z][a-z0-9\\_\\$()\\+\\-\\/]*"  % stock CouchDB regex
 ).
+
 
 init(Req, DbList) ->
     {cowboy_rest, Req, DbList}.
@@ -28,7 +29,7 @@ allowed_methods(Req, State) ->
 
 content_types_accepted(Req, State) ->
     {[
-        {'*', create_database}
+        {'*', create_db}
     ], Req, State}.
 
 content_types_provided(Req, State) ->
@@ -39,17 +40,16 @@ content_types_provided(Req, State) ->
 
 delete_completed(Req, DbList) ->
     Response = jiffy:encode({[{ok, true}]}),
-    Req2 = cowboy_req:reply(200, #{},  % 200 OK
-    <<Response/binary, "\n">>, Req),
+    Req2 = cowboy_req:reply(200, #{}, <<Response/binary, "\n">>, Req), % 200 OK
     {true, Req2, DbList}.
 
 delete_resource(Req, DbList) ->
     DbName = cowboy_req:binding(db_name, Req),
-    {delete_database(DbName, DbList), Req, DbList}.
+    {delete_db(DbName, DbList), Req, DbList}.
 
 is_conflict(Req, DbList) ->
     DbName = cowboy_req:binding(db_name, Req),
-    case database_exists(DbName, DbList) of
+    case db_exists(DbName, DbList) of
         true -> {true, Req, DbList};
         false -> {false, Req, DbList}
     end.
@@ -58,7 +58,7 @@ resource_exists(Req, DbList) ->
     DbName = cowboy_req:binding(db_name, Req),
     case validate_dbname(DbName) of
         ok ->
-            case database_exists(DbName, DbList) of
+            case db_exists(DbName, DbList) of
                 true -> {true, Req, DbList};
                 false -> {false, Req, DbList}
             end;
@@ -74,9 +74,9 @@ dbinfo_to_json(Req, DbList) ->
     Response = jiffy:encode({[{db_name, DbName}]}),
     {<<Response/binary, "\n">>, Req, DbList}.
 
-create_database(Req, DbList) ->
+create_db(Req, DbList) ->
     DbName = cowboy_req:binding(db_name, Req),
-    add_database(DbName, DbList),
+    add_db(DbName, DbList),
     Response = jiffy:encode({[{ok, true}]}),
     Req2 = cowboy_req:reply(201, #{},  % 201 Created
         <<Response/binary, "\n">>, Req),
@@ -84,13 +84,13 @@ create_database(Req, DbList) ->
 
 % Private
 
-add_database(DbName, DbList) ->
+add_db(DbName, DbList) ->
     ets:insert_new(DbList, {DbName}).
 
-database_exists(DbName, DbList) ->
+db_exists(DbName, DbList) ->
     ets:member(DbList, DbName).
 
-delete_database(DbName, DbList) ->
+delete_db(DbName, DbList) ->
     ets:delete(DbList, DbName).
 
 illegal_dbname_warning(DbName) ->

@@ -1,12 +1,12 @@
-%% @doc _all_dbs handler.
+%%% @doc Handler for /_all_dbs end point.
 -module(all_dbs_handler).
 
-%% Standard callbacks
+%%% Standard callbacks
 -export([init/2]).
 -export([allowed_methods/2]).
 -export([content_types_provided/2]).
 
-%% Custom callbacks
+%%% Custom callbacks
 -export([all_dbs_to_json/2]).
 
 

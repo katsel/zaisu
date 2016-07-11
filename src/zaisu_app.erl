@@ -1,18 +1,16 @@
-%% @private
+%%% @private
 -module(zaisu_app).
 -behaviour(application).
 
-%% API.
 -export([start/2]).
 -export([stop/1]).
 
-%% API.
 
 start(_Type, _Args) ->
     DbList = ets:new(database_list, [set, named_table, public]),
     Dispatch = cowboy_router:compile([
         {'_', [  % HostMatch
-            %% {PathMatch, Handler, Opts}
+            % {PathMatch, Handler, Opts}
             {"/", index_handler, []},
             {"/_all_dbs", all_dbs_handler, DbList},
             {"/:db_name", db_handler, DbList}

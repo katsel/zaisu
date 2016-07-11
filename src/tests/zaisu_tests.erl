@@ -4,7 +4,7 @@
 -define(APPS, [crypto, cowlib, ranch, cowboy, zaisu]).
 
 
-% Test descriptions
+%%% Test descriptions
 
 start_stop_test_() ->
     {
@@ -30,7 +30,7 @@ index_test_() ->
         }
     }.
 
-% Setup functions
+%%% Setup functions
 
 start() ->
     start_applications(?APPS).
@@ -39,7 +39,7 @@ stop(_) ->
     ok = stop_applications(?APPS).
 
 
-% Actual tests
+%%% Actual tests
 
 hello_test() ->
     ok.
@@ -54,7 +54,7 @@ check_index() ->
      ?_assertEqual(<<"{\"zaisu\":\"Welcome\"}\n">>, Body)].
 
 
-% Helper functions
+%%% Helper functions
 
 start_applications(Apps) ->
     start_applications(Apps, []).
@@ -77,7 +77,7 @@ stop_applications(Apps) ->
     [application:stop(App) || App <- lists:reverse(Apps)],
     ok.
 
-% fetch a response
+%% fetch a response
 do_get(Path) ->
 	{ok, ConnPid} = gun:open("localhost", 8080, #{retry => 0}),
 	Ref = gun:get(ConnPid, Path),
