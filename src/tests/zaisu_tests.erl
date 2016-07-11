@@ -18,6 +18,17 @@ start_stop_test_() ->
         }
     }.
 
+index_test_() ->
+    {
+        "The index page looks as expected",
+        {
+            setup,
+            fun start/0, fun stop/1,
+            fun(_) ->
+                check_index()
+            end
+        }
+    }.
 
 % Setup functions
 
@@ -36,6 +47,11 @@ hello_test() ->
 is_app_alive(App) ->
     Pid = whereis(App),
     ?_assert(erlang:is_process_alive(Pid)).
+
+check_index() ->
+    {Status, _, Body} = do_get("/"),
+    [?_assertEqual(200, Status),
+     ?_assertEqual(<<"{\"zaisu\":\"Welcome\"}\n">>, Body)].
 
 
 % Helper functions
@@ -60,3 +76,15 @@ start_applications([App|Apps], Acc) ->
 stop_applications(Apps) ->
     [application:stop(App) || App <- lists:reverse(Apps)],
     ok.
+
+% fetch a response
+do_get(Path) ->
+	{ok, ConnPid} = gun:open("localhost", 8080, #{retry => 0}),
+	Ref = gun:get(ConnPid, Path),
+	case gun:await(ConnPid, Ref) of
+		{response, nofin, Status, RespHeaders} ->
+			{ok, Body} = gun:await_body(ConnPid, Ref),
+			{Status, RespHeaders, Body};
+		{response, fin, Status, RespHeaders} ->
+			{Status, RespHeaders, <<>>}
+	end.
