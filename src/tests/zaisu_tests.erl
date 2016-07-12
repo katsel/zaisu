@@ -13,7 +13,7 @@ start_stop_test_() ->
             setup,
             fun start/0, fun stop/1,
             fun(_) ->
-                is_app_alive(zaisu_sup)
+                app_is_alive(zaisu_sup)
             end
         }
     }.
@@ -25,7 +25,7 @@ index_test_() ->
             setup,
             fun start/0, fun stop/1,
             fun(_) ->
-                check_index()
+                index_exists()
             end
         }
     }.
@@ -44,11 +44,11 @@ stop(_) ->
 hello_test() ->
     ok.
 
-is_app_alive(App) ->
+app_is_alive(App) ->
     Pid = whereis(App),
     ?_assert(erlang:is_process_alive(Pid)).
 
-check_index() ->
+index_exists() ->
     {Status, _, Body} = do_get("/"),
     [?_assertEqual(200, Status),
      ?_assertEqual(<<"{\"zaisu\":\"Welcome\"}\n">>, Body)].
@@ -77,9 +77,13 @@ stop_applications(Apps) ->
     [application:stop(App) || App <- lists:reverse(Apps)],
     ok.
 
-%% fetch a response
+gun_open() ->
+    {ok, ConnPid} = gun:open("localhost", 8080, #{retry => 0}),
+    ConnPid.
+
+%% fetch response of a GET request
 do_get(Path) ->
-	{ok, ConnPid} = gun:open("localhost", 8080, #{retry => 0}),
+	ConnPid = gun_open(),
 	Ref = gun:get(ConnPid, Path),
 	case gun:await(ConnPid, Ref) of
 		{response, nofin, Status, RespHeaders} ->
