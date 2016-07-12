@@ -7,26 +7,24 @@
 %%% Test descriptions
 
 start_stop_test_() ->
-    {
-        "The server can be started and stopped and is alive in between",
+    { "The server can be started and stopped and is alive in between",
         {
-            setup,
-            fun start/0, fun stop/1,
-            fun(_) ->
-                app_is_alive(zaisu_sup)
-            end
+        setup,
+        fun start/0, fun stop/1,
+        fun(_) ->
+            app_is_alive(zaisu_sup)
+        end
         }
     }.
 
 index_test_() ->
-    {
-        "The index page looks as expected",
+    { "The index page looks as expected",
         {
-            setup,
-            fun start/0, fun stop/1,
-            fun(_) ->
-                index_exists()
-            end
+        setup,
+        fun start/0, fun stop/1,
+        fun(_) ->
+            index_exists()
+        end
         }
     }.
 
@@ -83,12 +81,12 @@ gun_open() ->
 
 %% fetch response of a GET request
 do_get(Path) ->
-	ConnPid = gun_open(),
-	Ref = gun:get(ConnPid, Path),
-	case gun:await(ConnPid, Ref) of
-		{response, nofin, Status, RespHeaders} ->
-			{ok, Body} = gun:await_body(ConnPid, Ref),
-			{Status, RespHeaders, Body};
-		{response, fin, Status, RespHeaders} ->
-			{Status, RespHeaders, <<>>}
-	end.
+    ConnPid = gun_open(),
+    Ref = gun:get(ConnPid, Path),
+    case gun:await(ConnPid, Ref) of
+        {response, nofin, Status, RespHeaders} ->
+            {ok, Body} = gun:await_body(ConnPid, Ref),
+            {Status, RespHeaders, Body};
+        {response, fin, Status, RespHeaders} ->
+            {Status, RespHeaders, <<>>}
+    end.
