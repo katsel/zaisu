@@ -28,6 +28,18 @@ index_test_() ->
         }
     }.
 
+db_can_be_created_test_() ->
+    { "A database can be created",
+        {
+        setup,
+        fun start/0, fun stop/1,
+        fun(_) ->
+            db_can_be_created()
+        end
+        }
+    }.
+
+
 %%% Setup functions
 
 start() ->
@@ -50,6 +62,11 @@ index_exists() ->
     {Status, _, Body} = do_get("/"),
     [?_assertEqual(200, Status),
      ?_assertEqual(<<"{\"zaisu\":\"Welcome\"}\n">>, Body)].
+
+db_can_be_created() ->
+    {Status, _, Body} = do_put("/testdb"),
+    [?_assertEqual(201, Status),
+     ?_assertEqual(<<"\{\"ok\":true\}\n">>, Body)].
 
 
 %%% Helper functions
@@ -83,6 +100,18 @@ gun_open() ->
 do_get(Path) ->
     ConnPid = gun_open(),
     Ref = gun:get(ConnPid, Path),
+    case gun:await(ConnPid, Ref) of
+        {response, nofin, Status, RespHeaders} ->
+            {ok, Body} = gun:await_body(ConnPid, Ref),
+            {Status, RespHeaders, Body};
+        {response, fin, Status, RespHeaders} ->
+            {Status, RespHeaders, <<>>}
+    end.
+
+%% fetch response of a PUT request
+do_put(Path) ->
+    ConnPid = gun_open(),
+    Ref = gun:put(ConnPid, Path, []),
     case gun:await(ConnPid, Ref) of
         {response, nofin, Status, RespHeaders} ->
             {ok, Body} = gun:await_body(ConnPid, Ref),
