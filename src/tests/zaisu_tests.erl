@@ -39,6 +39,17 @@ db_can_be_created_test_() ->
         }
     }.
 
+no_duplicate_db_test_() ->
+    { "The same database cannot be created twice",
+        {
+        setup,
+        fun start/0, fun stop/1,
+        fun(_) ->
+            create_conflicting_dbs()
+        end
+        }
+    }.
+
 
 %%% Setup functions
 
@@ -64,9 +75,22 @@ index_exists() ->
      ?_assertEqual(<<"{\"zaisu\":\"Welcome\"}\n">>, Body)].
 
 db_can_be_created() ->
-    {Status, _, Body} = do_put("/testdb"),
-    [?_assertEqual(201, Status),
-     ?_assertEqual(<<"\{\"ok\":true\}\n">>, Body)].
+    TestDbPath = "/testdb",
+    {PutStatus, _, PutBody} = do_put(TestDbPath),
+    {GetStatus, _, GetBody} = do_get(TestDbPath),
+    {AllDbStatus, _, AllDbBody} = do_get("/_all_dbs"),
+    [[?_assertEqual(201, PutStatus),
+      ?_assertEqual(<<"\{\"ok\":true\}\n">>, PutBody)],
+     [?_assertEqual(200, GetStatus),
+      ?_assertEqual(<<"\{\"db_name\":\"testdb\"\}\n">>, GetBody)],
+     [?_assertEqual(200, AllDbStatus),
+      ?_assertEqual(<<"[\"testdb\"]\n">>, AllDbBody)]].
+
+create_conflicting_dbs() ->
+    {Status1, _, _} = do_put("/testdb"),
+    {Status2, _, _} = do_put("/testdb"),
+    [?_assertEqual(201, Status1),
+     ?_assertEqual(409, Status2)].
 
 
 %%% Helper functions
