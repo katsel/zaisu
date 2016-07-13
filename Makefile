@@ -2,7 +2,7 @@ PROJECT = zaisu
 PROJECT_DESCRIPTION = CouchDB mock replication endpoint
 PROJECT_VERSION = 0.0.1
 
-DEPS = cowboy jiffy gun
+DEPS = cowboy jiffy
 dep_cowboy_commit = master
 dep_jiffy_commit = master
 
