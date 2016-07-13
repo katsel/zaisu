@@ -1,7 +1,8 @@
 -module(zaisu_tests).
 -include_lib("eunit/include/eunit.hrl").
 
--define(APPS, [crypto, cowlib, ranch, cowboy, zaisu, gun]).
+-define(APPS,
+    [crypto, cowlib, ranch, cowboy, zaisu, asn1, public_key, ssl, gun]).
 
 
 %%% Test descriptions
