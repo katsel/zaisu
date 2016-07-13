@@ -120,10 +120,8 @@ gun_open() ->
     {ok, ConnPid} = gun:open("localhost", 8080, #{retry => 0}),
     ConnPid.
 
-%% fetch response of a GET request
-do_get(Path) ->
-    ConnPid = gun_open(),
-    Ref = gun:get(ConnPid, Path),
+%% generic function to handle the response of a HTTP request
+handle_gun_response(ConnPid, Ref) ->
     case gun:await(ConnPid, Ref) of
         {response, nofin, Status, RespHeaders} ->
             {ok, Body} = gun:await_body(ConnPid, Ref),
@@ -132,14 +130,14 @@ do_get(Path) ->
             {Status, RespHeaders, <<>>}
     end.
 
-%% fetch response of a PUT request
+%% send out a GET request and fetch its response
+do_get(Path) ->
+    ConnPid = gun_open(),
+    Ref = gun:get(ConnPid, Path),
+    handle_gun_response(ConnPid, Ref).
+
+%% send out a PUT request and fetch its response
 do_put(Path) ->
     ConnPid = gun_open(),
     Ref = gun:put(ConnPid, Path, []),
-    case gun:await(ConnPid, Ref) of
-        {response, nofin, Status, RespHeaders} ->
-            {ok, Body} = gun:await_body(ConnPid, Ref),
-            {Status, RespHeaders, Body};
-        {response, fin, Status, RespHeaders} ->
-            {Status, RespHeaders, <<>>}
-    end.
+    handle_gun_response(ConnPid, Ref).
