@@ -50,6 +50,26 @@ no_duplicate_db_test_() ->
         }
     }.
 
+db_can_be_deleted_test_() ->
+    [{ "Deleting a nonexistent database results in an error",
+        {
+        setup,
+        fun start/0, fun stop/1,
+        fun(_) ->
+            delete_nonexistent_db()
+        end
+        }
+     },
+     { "A database can be deleted",
+        {
+        setup,
+        fun start/0, fun stop/1,
+        fun(_) ->
+            create_delete_db()
+        end
+        }
+    }].
+
 
 %%% Setup functions
 
@@ -91,6 +111,18 @@ create_conflicting_dbs() ->
     {Status2, _, _} = do_put("/testdb"),
     [?_assertEqual(201, Status1),
      ?_assertEqual(409, Status2)].
+
+delete_nonexistent_db() ->
+    {Status, _, _} = do_delete("/abcd"),
+    [?_assertEqual(404, Status)].
+
+create_delete_db() ->
+    {_, _, _} = do_put("/abcd"),
+    {Status, _, Body} = do_delete("/abcd"),
+    {_, _, AllDbBody} = do_get("/_all_dbs"),
+    [?_assertEqual(200, Status),
+     ?_assertEqual(<<"\{\"ok\":true\}\n">>, Body),
+     ?_assertEqual(<<"[]\n">>, AllDbBody)].
 
 
 %%% Helper functions
@@ -140,4 +172,10 @@ do_get(Path) ->
 do_put(Path) ->
     ConnPid = gun_open(),
     Ref = gun:put(ConnPid, Path, []),
+    handle_gun_response(ConnPid, Ref).
+
+%% send out a DELETE request and fetch its response
+do_delete(Path) ->
+    ConnPid = gun_open(),
+    Ref = gun:delete(ConnPid, Path),
     handle_gun_response(ConnPid, Ref).
