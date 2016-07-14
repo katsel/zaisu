@@ -100,16 +100,18 @@ db_can_be_created() ->
     {PutStatus, _, PutBody} = do_put(TestDbPath),
     {GetStatus, _, GetBody} = do_get(TestDbPath),
     {AllDbStatus, _, AllDbBody} = do_get("/_all_dbs"),
+    {_, _, _} = do_delete(TestDbPath),
     [[?_assertEqual(201, PutStatus),
       ?_assertEqual(<<"\{\"ok\":true\}\n">>, PutBody)],
      [?_assertEqual(200, GetStatus),
       ?_assertEqual(<<"\{\"db_name\":\"testdb\"\}\n">>, GetBody)],
      [?_assertEqual(200, AllDbStatus),
-      ?_assertEqual(<<"[\"testdb\"]\n">>, AllDbBody)]].
+      ?_assert(alldbs_has_database(AllDbBody, <<"testdb">>))]].
 
 create_conflicting_dbs() ->
     {Status1, _, _} = do_put("/testdb"),
     {Status2, _, _} = do_put("/testdb"),
+    {_, _, _} = do_delete("/testdb"),
     [?_assertEqual(201, Status1),
      ?_assertEqual(409, Status2)].
 
@@ -123,7 +125,7 @@ create_delete_db() ->
     {_, _, AllDbBody} = do_get("/_all_dbs"),
     [?_assertEqual(200, Status),
      ?_assertEqual(<<"\{\"ok\":true\}\n">>, Body),
-     ?_assertEqual(<<"[]\n">>, AllDbBody)].
+     ?_assert(alldbs_is_empty(AllDbBody))].
 
 
 %%% Helper functions
@@ -182,3 +184,19 @@ do_delete(Path) ->
     ConnPid = gun_open(),
     Ref = gun:delete(ConnPid, Path),
     handle_gun_response(ConnPid, Ref).
+
+%% check if DbName is in the ResponseBody of _all_dbs
+alldbs_has_database(ResponseBody, DbName) when DbName == [] ->
+    case ResponseBody of
+        <<"[\"_replicator\",\"_users\"]\n">> -> true;  % CouchDB
+        <<"[]\n">> -> true;                            % Zaisu
+        _ -> false
+    end;
+alldbs_has_database(ResponseBody, DbName) ->
+    case re:run(ResponseBody, DbName, [{capture, none}, dollar_endonly]) of
+        match -> true;
+        nomatch -> false
+    end.
+
+alldbs_is_empty(ResponseBody) ->
+    alldbs_has_database(ResponseBody, []).
