@@ -50,8 +50,16 @@ delete_resource(Req, DbList) ->
 is_conflict(Req, DbList) ->
     DbName = cowboy_req:binding(db_name, Req),
     case db_exists(DbName, DbList) of
-        true -> {true, Req, DbList};
-        false -> {false, Req, DbList}
+        true ->
+            Response = jiffy:encode({[
+                {error, file_exists},
+                {reason, <<"The database could not be created, the file ",
+                    "already exists.">>}
+                ]}),
+            Req2 = cowboy_req:reply(412, #{}, <<Response/binary, "\n">>, Req),
+            {true, Req2, DbList};
+        false ->
+            {false, Req, DbList}
     end.
 
 resource_exists(Req, DbList) ->
