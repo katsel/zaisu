@@ -150,7 +150,9 @@ stop_applications(Apps) ->
     ok.
 
 gun_open() ->
-    {ok, ConnPid} = gun:open("localhost", 8080, #{retry => 0}),
+    Host = os:getenv("HOST", "localhost"),
+    {Port, _} = string:to_integer(os:getenv("PORT", "8080")),
+    {ok, ConnPid} = gun:open(Host, Port, #{retry => 0}),
     ConnPid.
 
 %% generic function to handle the response of a HTTP request
