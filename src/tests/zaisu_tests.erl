@@ -104,7 +104,7 @@ db_can_be_created() ->
     [[?_assertEqual(201, PutStatus),
       ?_assertEqual(<<"\{\"ok\":true\}\n">>, PutBody)],
      [?_assertEqual(200, GetStatus),
-      ?_assertEqual(<<"\{\"db_name\":\"testdb\"\}\n">>, GetBody)],
+      ?_assert(dbpage_is_valid(GetBody, <<"testdb">>))],
      [?_assertEqual(200, AllDbStatus),
       ?_assert(alldbs_has_database(AllDbBody, <<"testdb">>))]].
 
@@ -207,3 +207,9 @@ alldbs_has_database(ResponseBody, DbName) ->
 
 alldbs_is_empty(ResponseBody) ->
     alldbs_has_database(ResponseBody, []).
+
+%% check if the /dbname page is valid
+dbpage_is_valid(ResponseBody, DbName) ->
+    DbPage = element(1, jiffy:decode(ResponseBody)),
+    DbNameTuple = lists:keyfind(<<"db_name">>, 1, DbPage),
+    DbNameTuple == {<<"db_name">>, DbName}.
