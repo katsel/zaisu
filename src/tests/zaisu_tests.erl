@@ -110,10 +110,13 @@ db_can_be_created() ->
 
 create_conflicting_dbs() ->
     {Status1, _, _} = do_put("/testdb"),
-    {Status2, _, _} = do_put("/testdb"),
+    {Status2, _, Body2} = do_put("/testdb"),
     {_, _, _} = do_delete("/testdb"),
+    ErrorMsg = <<"\{\"error\":\"file_exists\",\"reason\":\"The database ",
+        "could not be created, the file already exists.\"\}\n">>,
     [?_assertEqual(201, Status1),
-     ?_assertEqual(409, Status2)].
+     ?_assertEqual(412, Status2),
+     ?_assertEqual(ErrorMsg, Body2)].
 
 delete_nonexistent_db() ->
     {Status, _, _} = do_delete("/abcd"),
