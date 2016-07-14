@@ -71,6 +71,17 @@ db_can_be_deleted_test_() ->
         }
     }].
 
+illegal_dbname_test_() ->
+    { "Cannot GET/PUT/DELETE a database with an illegal name",
+        {
+        setup,
+        fun start/0, fun stop/1,
+        fun(_) ->
+            check_illegal_dbname()
+        end
+        }
+    }.
+
 
 %%% Setup functions
 
@@ -129,6 +140,21 @@ create_delete_db() ->
     [?_assertEqual(200, Status),
      ?_assertEqual(<<"\{\"ok\":true\}\n">>, Body),
      ?_assert(alldbs_is_empty(AllDbBody))].
+
+check_illegal_dbname() ->
+    {Status1, _, Body1} = do_put("/1abc"),
+    {Status2, _, Body2} = do_get("/1abc"),
+    {Status3, _, Body3} = do_delete("/1abc"),
+    ErrorMsg = <<"\{\"error\":\"illegal_database_name\",\"reason\":",
+        "\"Name: '1abc'. Only lowercase characters (a-z), digits (0-9), and ",
+        "any of the characters _, $, (, ), +, -, and / are allowed. Must ",
+        "begin with a letter.\"\}\n">>,
+    [?_assertEqual(400, Status1),
+     ?_assertEqual(ErrorMsg, Body1),
+     ?_assertEqual(400, Status2),
+     ?_assertEqual(ErrorMsg, Body2),
+     ?_assertEqual(400, Status3),
+     ?_assertEqual(ErrorMsg, Body3)].
 
 
 %%% Helper functions
