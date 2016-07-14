@@ -93,7 +93,7 @@ app_is_alive(App) ->
 index_exists() ->
     {Status, _, Body} = do_get("/"),
     [?_assertEqual(200, Status),
-     ?_assertEqual(<<"{\"zaisu\":\"Welcome\"}\n">>, Body)].
+     ?_assert(index_has_welcome(Body))].
 
 db_can_be_created() ->
     TestDbPath = "/testdb",
@@ -184,6 +184,13 @@ do_delete(Path) ->
     ConnPid = gun_open(),
     Ref = gun:delete(ConnPid, Path),
     handle_gun_response(ConnPid, Ref).
+
+%% check if the index page has a welcome message
+index_has_welcome(IndexBody) ->
+    Index = element(1, jiffy:decode(IndexBody)),
+    (lists:keyfind(<<"couchdb">>, 1, Index) == {<<"couchdb">>, <<"Welcome">>})
+        or
+        (lists:keyfind(<<"zaisu">>, 1, Index) == {<<"zaisu">>, <<"Welcome">>}).
 
 %% check if DbName is in the ResponseBody of _all_dbs
 alldbs_has_database(ResponseBody, DbName) when DbName == [] ->
