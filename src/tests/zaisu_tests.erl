@@ -72,7 +72,7 @@ db_can_be_deleted_test_() ->
     }].
 
 illegal_dbname_test_() ->
-    { "Cannot GET/PUT/DELETE a database with an illegal name",
+    { "Cannot PUT/GET/DELETE a database with an illegal name",
         {
         setup,
         fun start/0, fun stop/1,
@@ -93,9 +93,6 @@ stop(_) ->
 
 
 %%% Actual tests
-
-hello_test() ->
-    ok.
 
 app_is_alive(App) ->
     Pid = whereis(App),
@@ -149,12 +146,12 @@ check_illegal_dbname() ->
         "\"Name: '1abc'. Only lowercase characters (a-z), digits (0-9), and ",
         "any of the characters _, $, (, ), +, -, and / are allowed. Must ",
         "begin with a letter.\"\}\n">>,
-    [?_assertEqual(400, Status1),
-     ?_assertEqual(ErrorMsg, Body1),
-     ?_assertEqual(400, Status2),
-     ?_assertEqual(ErrorMsg, Body2),
-     ?_assertEqual(400, Status3),
-     ?_assertEqual(ErrorMsg, Body3)].
+    [[?_assertEqual(400, Status1),
+      ?_assertEqual(ErrorMsg, Body1)],
+     [?_assertEqual(400, Status2),
+      ?_assertEqual(ErrorMsg, Body2)],
+     [?_assertEqual(400, Status3),
+      ?_assertEqual(ErrorMsg, Body3)]].
 
 
 %%% Helper functions
