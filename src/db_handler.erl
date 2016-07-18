@@ -25,7 +25,7 @@ init(Req, DbList) ->
     {cowboy_rest, Req, DbList}.
 
 allowed_methods(Req, State) ->
-    {[<<"GET">>, <<"PUT">>, <<"DELETE">>], Req, State}.
+    {[<<"GET">>, <<"HEAD">>, <<"PUT">>, <<"DELETE">>], Req, State}.
 
 content_types_accepted(Req, State) ->
     {[
