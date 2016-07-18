@@ -106,11 +106,14 @@ index_exists() ->
 db_can_be_created() ->
     TestDbPath = "/testdb",
     {PutStatus, _, PutBody} = do_put(TestDbPath),
+    {HeadStatus, _, HeadBody} = do_head(TestDbPath),
     {GetStatus, _, GetBody} = do_get(TestDbPath),
     {AllDbStatus, _, AllDbBody} = do_get("/_all_dbs"),
     {_, _, _} = do_delete(TestDbPath),
     [[?_assertEqual(201, PutStatus),
       ?_assertEqual(<<"\{\"ok\":true\}\n">>, PutBody)],
+     [?_assertEqual(200, HeadStatus),
+      ?_assertEqual(<<>>, HeadBody)],
      [?_assertEqual(200, GetStatus),
       ?_assert(dbpage_is_valid(GetBody, <<"testdb">>))],
      [?_assertEqual(200, AllDbStatus),
@@ -139,19 +142,22 @@ create_delete_db() ->
      ?_assert(alldbs_is_empty(AllDbBody))].
 
 check_illegal_dbname() ->
-    {Status1, _, Body1} = do_put("/1abc"),
-    {Status2, _, Body2} = do_get("/1abc"),
-    {Status3, _, Body3} = do_delete("/1abc"),
+    {PutStatus, _, PutBody} = do_put("/1abc"),
+    {HeadStatus, _, HeadBody} = do_head("/1abc"),
+    {GetStatus, _, GetBody} = do_get("/1abc"),
+    {DeleteStatus, _, DeleteBody} = do_delete("/1abc"),
     ErrorMsg = <<"\{\"error\":\"illegal_database_name\",\"reason\":",
         "\"Name: '1abc'. Only lowercase characters (a-z), digits (0-9), and ",
         "any of the characters _, $, (, ), +, -, and / are allowed. Must ",
         "begin with a letter.\"\}\n">>,
-    [[?_assertEqual(400, Status1),
-      ?_assertEqual(ErrorMsg, Body1)],
-     [?_assertEqual(400, Status2),
-      ?_assertEqual(ErrorMsg, Body2)],
-     [?_assertEqual(400, Status3),
-      ?_assertEqual(ErrorMsg, Body3)]].
+    [[?_assertEqual(400, PutStatus),
+      ?_assertEqual(ErrorMsg, PutBody)],
+     [?_assertEqual(400, HeadStatus),
+      ?_assertEqual(<<>>, HeadBody)],
+     [?_assertEqual(400, GetStatus),
+      ?_assertEqual(ErrorMsg, GetBody)],
+     [?_assertEqual(400, DeleteStatus),
+      ?_assertEqual(ErrorMsg, DeleteBody)]].
 
 
 %%% Helper functions
@@ -197,6 +203,12 @@ handle_gun_response(ConnPid, Ref) ->
 do_get(Path) ->
     ConnPid = gun_open(),
     Ref = gun:get(ConnPid, Path),
+    handle_gun_response(ConnPid, Ref).
+
+%% send out a HEAD request and fetch its response
+do_head(Path) ->
+    ConnPid = gun_open(),
+    Ref = gun:head(ConnPid, Path),
     handle_gun_response(ConnPid, Ref).
 
 %% send out a PUT request and fetch its response
