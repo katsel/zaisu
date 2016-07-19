@@ -195,11 +195,12 @@ doc_can_be_created() ->
     {_, _, _} = do_put("/testdb"),
     {Status, _, Body} = do_post("/testdb", "{\"Company\":\"Example, Inc.\"}"),
     {_, _, _} = do_delete("/testdb"),
+    JBody = jiffy:decode(Body, [return_maps]),
     [?_assertEqual(201, Status),
-     ?_assertEqual(true, responsebody_get_value(Body, <<"ok">>)),
-     ?_assert(responsebody_has_key(Body, <<"id">>)),
+     ?_assertEqual(true, responsebody_get_value(JBody, <<"ok">>)),
+     ?_assert(responsebody_has_key(JBody, <<"id">>)),
      ?_assertEqual(
-        responsebody_get_value(Body, <<"rev">>),
+        responsebody_get_value(JBody, <<"rev">>),
         <<"1-3f23f12349a5e83d318d48bef42f6034">>
      )].
 
@@ -298,13 +299,17 @@ responsebody_has_value(ResponseBody, Value) ->
     end.
 
 %% return value for key from the response body
-responsebody_get_value(ResponseBody, Key) ->
+responsebody_get_value(ResponseBody, Key) when is_binary(ResponseBody) ->
     JRespBody = jiffy:decode(ResponseBody, [return_maps]),
+    responsebody_get_value(JRespBody, Key);
+responsebody_get_value(JRespBody, Key) ->
     maps:get(Key, JRespBody).
 
-% check if the response body contains a certain key
-responsebody_has_key(ResponseBody, Key) ->
+%% check if the response body contains a certain key
+responsebody_has_key(ResponseBody, Key) when is_binary(ResponseBody) ->
     JRespBody = jiffy:decode(ResponseBody, [return_maps]),
+    responsebody_has_key(JRespBody, Key);
+responsebody_has_key(JRespBody, Key) ->
     case maps:find(Key, JRespBody) of
         error -> false;
         {ok, _} -> true
