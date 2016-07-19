@@ -29,6 +29,17 @@ index_test_() ->
         }
     }.
 
+nonexistent_db_test_() ->
+    { "Cannot GET a database that does not exist",
+        {
+        setup,
+        fun start/0, fun stop/1,
+        fun(_) ->
+            get_nonexistent_db()
+        end
+        }
+    }.
+
 db_can_be_created_test_() ->
     { "A database can be created",
         {
@@ -102,6 +113,12 @@ index_exists() ->
     {Status, _, Body} = do_get("/"),
     [?_assertEqual(200, Status),
      ?_assert(responsebody_has_value(Body, <<"Welcome">>))].
+
+get_nonexistent_db() ->
+    {Status, _, Body} = do_get("/nodbhere"),
+    [?_assertEqual(404, Status),
+     ?_assertEqual(
+        <<"{\"error\":\"not_found\",\"reason\":\"no_db_file\"}\n">>, Body)].
 
 db_can_be_created() ->
     TestDbPath = "/testdb",
