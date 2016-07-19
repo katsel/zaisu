@@ -93,6 +93,17 @@ illegal_dbname_test_() ->
         }
     }.
 
+doc_can_be_created_test_() ->
+    { "A document can be created inside a database",
+        {
+        setup,
+        fun start/0, fun stop/1,
+        fun(_) ->
+            doc_can_be_created()
+        end
+        }
+    }.
+
 
 %%% Setup functions
 
@@ -180,6 +191,18 @@ check_illegal_dbname() ->
      [?_assertEqual(400, DeleteStatus),
       ?_assertEqual(ErrorMsg, DeleteBody)]].
 
+doc_can_be_created() ->
+    {_, _, _} = do_put("/testdb"),
+    {Status, _, Body} = do_post("/testdb", "{\"Company\":\"Example, Inc.\"}"),
+    {_, _, _} = do_delete("/testdb"),
+    [?_assertEqual(201, Status),
+     ?_assertEqual(true, responsebody_get_value(Body, <<"ok">>)),
+     ?_assert(responsebody_has_key(Body, <<"id">>)),
+     ?_assertEqual(
+        responsebody_get_value(Body, <<"rev">>),
+        <<"1-3f23f12349a5e83d318d48bef42f6034">>
+     )].
+
 
 %%% Helper functions
 
@@ -244,6 +267,14 @@ do_delete(Path) ->
     Ref = gun:delete(ConnPid, Path),
     handle_gun_response(ConnPid, Ref).
 
+%% send a POST request with a JSON body and fetch its response
+do_post(Path, Body) ->
+    ConnPid = gun_open(),
+    Ref = gun:post(ConnPid, Path, [
+        {<<"content-type">>, "application/json"}
+    ], Body),
+    handle_gun_response(ConnPid, Ref).
+
 %% check if DbName is in the ResponseBody of /_all_dbs
 alldbs_has_database(ResponseBody, DbName) ->
     JRespBody = jiffy:decode(ResponseBody),
@@ -270,3 +301,11 @@ responsebody_has_value(ResponseBody, Value) ->
 responsebody_get_value(ResponseBody, Key) ->
     JRespBody = jiffy:decode(ResponseBody, [return_maps]),
     maps:get(Key, JRespBody).
+
+% check if the response body contains a certain key
+responsebody_has_key(ResponseBody, Key) ->
+    JRespBody = jiffy:decode(ResponseBody, [return_maps]),
+    case maps:find(Key, JRespBody) of
+        error -> false;
+        {ok, _} -> true
+    end.
