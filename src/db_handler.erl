@@ -3,6 +3,7 @@
 
 %%% Standard callbacks
 -export([init/2]).
+-export([allow_missing_post/2]).
 -export([allowed_methods/2]).
 -export([content_types_accepted/2]).
 -export([content_types_provided/2]).
@@ -24,8 +25,11 @@
 init(Req, DbList) ->
     {cowboy_rest, Req, DbList}.
 
+allow_missing_post(Req, State) ->
+    {false, Req, State}.
+
 allowed_methods(Req, State) ->
-    {[<<"GET">>, <<"HEAD">>, <<"PUT">>, <<"DELETE">>], Req, State}.
+    {[<<"GET">>, <<"HEAD">>, <<"PUT">>, <<"DELETE">>, <<"POST">>], Req, State}.
 
 content_types_accepted(Req, State) ->
     {[
