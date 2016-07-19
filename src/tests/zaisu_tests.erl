@@ -101,7 +101,7 @@ app_is_alive(App) ->
 index_exists() ->
     {Status, _, Body} = do_get("/"),
     [?_assertEqual(200, Status),
-     ?_assert(index_has_welcome(Body))].
+     ?_assert(responsebody_has_value(Body, <<"Welcome">>))].
 
 db_can_be_created() ->
     TestDbPath = "/testdb",
@@ -115,7 +115,9 @@ db_can_be_created() ->
      [?_assertEqual(200, HeadStatus),
       ?_assertEqual(<<>>, HeadBody)],
      [?_assertEqual(200, GetStatus),
-      ?_assert(dbpage_is_valid(GetBody, <<"testdb">>))],
+      ?_assertEqual(
+        responsebody_get_value(GetBody, <<"db_name">>), <<"testdb">>)
+     ],
      [?_assertEqual(200, AllDbStatus),
       ?_assert(alldbs_has_database(AllDbBody, <<"testdb">>))]].
 
@@ -223,31 +225,29 @@ do_delete(Path) ->
     Ref = gun:delete(ConnPid, Path),
     handle_gun_response(ConnPid, Ref).
 
-%% check if the index page has a welcome message
-index_has_welcome(IndexBody) ->
-    Index = element(1, jiffy:decode(IndexBody)),
-    (lists:keyfind(<<"couchdb">>, 1, Index) == {<<"couchdb">>, <<"Welcome">>})
-        or
-        (lists:keyfind(<<"zaisu">>, 1, Index) == {<<"zaisu">>, <<"Welcome">>}).
-
-%% check if DbName is in the ResponseBody of _all_dbs
-alldbs_has_database(ResponseBody, DbName) when DbName == [] ->
-    case ResponseBody of
-        <<"[\"_replicator\",\"_users\"]\n">> -> true;  % CouchDB
-        <<"[]\n">> -> true;                            % Zaisu
-        _ -> false
-    end;
+%% check if DbName is in the ResponseBody of /_all_dbs
 alldbs_has_database(ResponseBody, DbName) ->
-    case re:run(ResponseBody, DbName, [{capture, none}, dollar_endonly]) of
-        match -> true;
-        nomatch -> false
+    JRespBody = jiffy:decode(ResponseBody),
+    lists:member(DbName, JRespBody).
+
+%% check if /_all_dbs is empty (except for system databases)
+alldbs_is_empty(ResponseBody) ->
+    JRespBody = jiffy:decode(ResponseBody),
+    case JRespBody of
+        [] -> true;  % zaisu
+        [<<"_replicator">>, <<"_users">>] -> true;  % CouchDB
+        _ -> false
     end.
 
-alldbs_is_empty(ResponseBody) ->
-    alldbs_has_database(ResponseBody, []).
+%% check if the response body contains a certain value (regardless of key)
+responsebody_has_value(ResponseBody, Value) ->
+    Index = element(1, jiffy:decode(ResponseBody)),
+    case lists:keyfind(Value, 2, Index) of
+        {_, Value} -> true;
+        _ -> false
+    end.
 
-%% check if the /dbname page is valid
-dbpage_is_valid(ResponseBody, DbName) ->
-    DbPage = element(1, jiffy:decode(ResponseBody)),
-    DbNameTuple = lists:keyfind(<<"db_name">>, 1, DbPage),
-    DbNameTuple == {<<"db_name">>, DbName}.
+%% return value for key from the response body
+responsebody_get_value(ResponseBody, Key) ->
+    JRespBody = jiffy:decode(ResponseBody, [return_maps]),
+    maps:get(Key, JRespBody).
