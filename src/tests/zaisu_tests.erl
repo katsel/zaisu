@@ -94,7 +94,16 @@ illegal_dbname_test_() ->
     }.
 
 doc_can_be_created_test_() ->
-    { "A document can be created inside a database",
+    [{ "A document cannot be created without creating a database first",
+        {
+        setup,
+        fun start/0, fun stop/1,
+        fun(_) ->
+            doc_without_db()
+        end
+        }
+     },
+     { "A document can be created inside a database",
         {
         setup,
         fun start/0, fun stop/1,
@@ -102,7 +111,7 @@ doc_can_be_created_test_() ->
             doc_can_be_created()
         end
         }
-    }.
+    }].
 
 
 %%% Setup functions
@@ -190,6 +199,12 @@ check_illegal_dbname() ->
       ?_assertEqual(ErrorMsg, GetBody)],
      [?_assertEqual(400, DeleteStatus),
       ?_assertEqual(ErrorMsg, DeleteBody)]].
+
+doc_without_db() ->
+    {Status, _, Body} = do_post("/testdb", "{\"Company\":\"Example, Inc.\"}"),
+    [?_assertEqual(404, Status),
+     ?_assertEqual(
+        <<"{\"error\":\"not_found\",\"reason\":\"no_db_file\"}\n">>, Body)].
 
 doc_can_be_created() ->
     {_, _, _} = do_put("/testdb"),
