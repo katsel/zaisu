@@ -67,13 +67,21 @@ resource_exists(Req, DbList) ->
     case validate_dbname(DbName) of
         ok ->
             case db_exists(DbName, DbList) of
-                true -> {true, Req, DbList};
-                false -> {false, Req, DbList}
+                true ->
+                    {true, Req, DbList};
+                false ->
+                    ResponseBody = jiffy:encode({[
+                        {error, not_found},
+                        {reason, no_db_file}
+                    ]}),
+                    Req2 = cowboy_req:set_resp_body(
+                        <<ResponseBody/binary, "\n">>, Req),
+                    {false, Req2, DbList}
             end;
         _ ->
-        Req2 = cowboy_req:reply(400, #{},  % 400 Bad Request
-            illegal_dbname_warning(DbName), Req),
-        {false, Req2, DbList}
+            Req2 = cowboy_req:reply(400, #{},  % 400 Bad Request
+                illegal_dbname_warning(DbName), Req),
+            {false, Req2, DbList}
     end.
 
 
