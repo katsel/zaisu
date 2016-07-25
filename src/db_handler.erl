@@ -15,6 +15,7 @@
 %%% Custom callbacks
 -export([dbinfo_to_json/2]).
 -export([create_db/2]).
+-export([create_document/2]).
 
 %% valid database name
 -define(DBNAME_REGEX,
@@ -33,6 +34,7 @@ allowed_methods(Req, State) ->
 
 content_types_accepted(Req, State) ->
     {[
+        {<<"application/json">>, create_document},
         {'*', create_db}
     ], Req, State}.
 
@@ -91,6 +93,26 @@ create_db(Req, DbList) ->
     Req2 = cowboy_req:reply(201, #{},  % 201 Created
         <<Response/binary, "\n">>, Req),
     {true, Req2, DbName}.
+
+create_document(Req, DbList) ->
+    {ok, Body, Req2} = cowboy_req:body(Req),
+    Method = cowboy_req:method(Req2),
+    HasBody = cowboy_req:has_body(Req2),
+    Encoding = cowboy_req:parse_header(<<"transfer-encoding">>, Req2),
+    Length = cowboy_req:parse_header(<<"content-length">>, Req2),
+    DbName = cowboy_req:binding(db_name, Req2),
+    Response = jiffy:encode({[
+        {db_name, DbName},
+        {method, Method},
+        {has_body, HasBody},
+        {encoding, Encoding},
+        {body_length, Length}
+        ]}),
+    io:format(Response), %% debug
+    io:format(Body),     %% debug
+    Req3  = cowboy_req:set_resp_body(<<Response/binary, "\n">>, Req2),
+    {true, Req3, DbList}.
+
 
 % Private
 
