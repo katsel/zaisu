@@ -95,12 +95,13 @@ create_db(Req, DbList) ->
     {true, Req2, DbName}.
 
 create_document(Req, DbList) ->
-    {ok, Body, Req2} = cowboy_req:body(Req),
+    {ok, Body, Req2} = cowboy_req:read_body(Req),
     Method = cowboy_req:method(Req2),
     HasBody = cowboy_req:has_body(Req2),
     Encoding = cowboy_req:parse_header(<<"transfer-encoding">>, Req2),
     Length = cowboy_req:parse_header(<<"content-length">>, Req2),
     DbName = cowboy_req:binding(db_name, Req2),
+    AllHeaders = cowboy_req:headers(Req2),
     Response = jiffy:encode({[
         {db_name, DbName},
         {method, Method},
@@ -108,8 +109,9 @@ create_document(Req, DbList) ->
         {encoding, Encoding},
         {body_length, Length}
         ]}),
-    io:format(Response), %% debug
-    io:format(Body),     %% debug
+    io:format(Body),                      %% debug
+    io:format(Response),                  %% debug
+    io:format(jiffy:encode(AllHeaders)),  %% debug
     Req3  = cowboy_req:set_resp_body(<<Response/binary, "\n">>, Req2),
     {true, Req3, DbList}.
 
