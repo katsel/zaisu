@@ -119,7 +119,7 @@ create_document(Req, DbList) ->
 % Private
 
 add_db(DbName, DbList) ->
-    ets:insert_new(DbList, {DbName}).
+    ets:insert_new(DbList, {DbName, {}}).
 
 db_exists(DbName, DbList) ->
     ets:member(DbList, DbName).

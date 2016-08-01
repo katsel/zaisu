@@ -7,7 +7,7 @@
 
 
 start(_Type, _Args) ->
-    DbList = ets:new(database_list, [set, named_table, public]),
+    DbList = ets:new(database_list, [ordered_set, named_table, public]),
     Dispatch = cowboy_router:compile([
         {'_', [  % HostMatch
             % {PathMatch, Handler, Opts}

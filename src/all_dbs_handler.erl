@@ -29,9 +29,20 @@ content_types_provided(Req, State) ->
 
 
 all_dbs_to_json(Req, DbList) ->
-    AllDbsAsList = lists:map(
-        % ets stores dbnames as bitstrings inside tuples. de-tuplify
-        fun(X) -> {Y} = X, Y end,
-        lists:usort(ets:tab2list(DbList))),
+    % database names are stored as the keys of the 'DbList' ets
+    AllDbsAsList = keys(DbList),
     Response = jiffy:encode(AllDbsAsList),
     {<<Response/binary, "\n">>, Req, DbList}.
+
+
+%% retrieve all keys of an ets object
+keys(TableName) ->
+    FirstKey = ets:first(TableName),
+    Keys = keys(TableName, FirstKey, [FirstKey]),
+    lists:reverse(Keys).
+
+keys(_TableName, '$end_of_table', ['$end_of_table'|Acc]) ->
+    Acc;
+keys(TableName, CurrentKey, Acc) ->
+    NextKey = ets:next(TableName, CurrentKey),
+    keys(TableName, NextKey, [NextKey|Acc]).
