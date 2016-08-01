@@ -15,7 +15,7 @@
 %%% Custom callbacks
 -export([dbinfo_to_json/2]).
 -export([create_db/2]).
--export([create_document/2]).
+-export([create_doc/2]).
 
 %% valid database name
 -define(DBNAME_REGEX,
@@ -34,7 +34,7 @@ allowed_methods(Req, State) ->
 
 content_types_accepted(Req, State) ->
     {[
-        {<<"application/json">>, create_document},
+        {<<"application/json">>, create_doc},
         {'*', create_db}
     ], Req, State}.
 
@@ -94,7 +94,7 @@ create_db(Req, DbList) ->
         <<Response/binary, "\n">>, Req),
     {true, Req2, DbName}.
 
-create_document(Req, DbList) ->
+create_doc(Req, DbList) ->
     {ok, Body, Req2} = cowboy_req:read_body(Req),
     JBody = jiffy:decode(Body),
     Id = generic_id,
