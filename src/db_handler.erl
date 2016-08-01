@@ -96,27 +96,23 @@ create_db(Req, DbList) ->
 
 create_document(Req, DbList) ->
     {ok, Body, Req2} = cowboy_req:read_body(Req),
-    Method = cowboy_req:method(Req2),
-    HasBody = cowboy_req:has_body(Req2),
-    Encoding = cowboy_req:parse_header(<<"transfer-encoding">>, Req2),
-    Length = cowboy_req:parse_header(<<"content-length">>, Req2),
-    DbName = cowboy_req:binding(db_name, Req2),
-    AllHeaders = cowboy_req:headers(Req2),
+    JBody = jiffy:decode(Body),
+    Id = generic_id,
+    Rev = new_revid(JBody),
+    RevStr = rev_to_str({1, Rev}),
     Response = jiffy:encode({[
-        {db_name, DbName},
-        {method, Method},
-        {has_body, HasBody},
-        {encoding, Encoding},
-        {body_length, Length}
+        {ok, true},
+        {id, Id},
+        {rev, RevStr}
         ]}),
-    io:format(Body),                      %% debug
-    io:format(Response),                  %% debug
-    io:format(jiffy:encode(AllHeaders)),  %% debug
-    Req3  = cowboy_req:set_resp_body(<<Response/binary, "\n">>, Req2),
+    Req3  = cowboy_req:reply(201, #{},  % 201 Created
+        <<Response/binary, "\n">>, Req2),
     {true, Req3, DbList}.
 
 
 % Private
+
+% Db functions
 
 add_db(DbName, DbList) ->
     ets:insert_new(DbList, {DbName, {}}).
@@ -158,3 +154,24 @@ validate_dbname(DbName) when is_binary(DbName) ->
         nomatch ->
             {error, {illegal_database_name, DbName}}
     end.
+
+% Doc functions
+
+new_revid(Body) ->
+    new_revid(Body, 0, [], [], false).
+
+new_revid(Body, OldStart, OldRevs, Atts, Deleted) ->
+    OldRev = case OldRevs of [] -> 0; [OldRev0|_] -> OldRev0 end,
+    crypto:hash(md5, term_to_binary(
+        [Deleted, OldStart, OldRev, Body, Atts],
+        [{minor_version, 1}]
+    )).
+
+revid_to_str(RevId) when size(RevId) =:= 16 ->
+    << << (list_to_binary(io_lib:format("~2.16.0b", [B])))/binary >>
+     || <<B>> <= RevId >>;
+revid_to_str(RevId) ->
+    RevId.
+
+rev_to_str({Pos, RevId}) ->
+    list_to_binary([integer_to_list(Pos),"-",revid_to_str(RevId)]).
