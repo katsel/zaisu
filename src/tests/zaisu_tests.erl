@@ -149,8 +149,10 @@ create_conflicting_dbs() ->
      ?_assertEqual(ErrorMsg, Body2)].
 
 delete_nonexistent_db() ->
-    {Status, _, _} = do_delete("/abcd"),
-    [?_assertEqual(404, Status)].
+    {Status, _, Body} = do_delete("/abcd"),
+    ErrorMsg = <<"{\"error\":\"not_found\",\"reason\":\"missing\"}\n">>,
+    [?_assertEqual(404, Status),
+     ?_assertEqual(ErrorMsg, Body)].
 
 create_delete_db() ->
     {_, _, _} = do_put("/abcd"),
