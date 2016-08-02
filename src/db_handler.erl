@@ -66,18 +66,8 @@ resource_exists(Req, DbList) ->
     DbName = cowboy_req:binding(db_name, Req),
     case validate_dbname(DbName) of
         ok ->
-            case db_exists(DbName, DbList) of
-                true ->
-                    {true, Req, DbList};
-                false ->
-                    ResponseBody = jiffy:encode({[
-                        {error, not_found},
-                        {reason, no_db_file}
-                    ]}),
-                    Req2 = cowboy_req:set_resp_body(
-                        <<ResponseBody/binary, "\n">>, Req),
-                    {false, Req2, DbList}
-            end;
+            DbExists = db_exists(DbName, DbList),
+            handle_resource_request(DbExists, Req, DbList);
         _ ->
             Req2 = cowboy_req:reply(400, #{},  % 400 Bad Request
                 illegal_dbname_warning(DbName), Req),
@@ -108,6 +98,20 @@ db_exists(DbName, DbList) ->
 
 delete_db(DbName, DbList) ->
     ets:delete(DbList, DbName).
+
+handle_resource_request(true, Req, DbList) ->
+    {true, Req, DbList};
+handle_resource_request(false, Req, DbList) ->
+    Reason = case cowboy_req:method(Req) of
+        <<"DELETE">> -> missing;  % needed for consistency with CouchDB
+        _ -> no_db_file
+    end,
+    ResponseBody = jiffy:encode({[
+        {error, not_found},
+        {reason, Reason}
+    ]}),
+    Req2 = cowboy_req:set_resp_body(<<ResponseBody/binary, "\n">>, Req),
+    {false, Req2, DbList}.
 
 illegal_dbname_warning(DbName) ->
     Response = jiffy:encode({[
