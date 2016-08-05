@@ -111,6 +111,15 @@ doc_can_be_created_test_() ->
             doc_can_be_created()
         end
         }
+    },
+    { "A document can be created and retrieved",
+        {
+        setup,
+        fun start/0, fun stop/1,
+        fun(_) ->
+            doc_can_be_retrieved()
+        end
+        }
     }].
 
 
@@ -215,9 +224,24 @@ doc_can_be_created() ->
      ?_assertEqual(true, responsebody_get_value(JBody, <<"ok">>)),
      ?_assert(responsebody_has_key(JBody, <<"id">>)),
      ?_assertEqual(
-        responsebody_get_value(JBody, <<"rev">>),
-        <<"1-3f23f12349a5e83d318d48bef42f6034">>
+        <<"1-3f23f12349a5e83d318d48bef42f6034">>,
+        responsebody_get_value(JBody, <<"rev">>)
      )].
+
+doc_can_be_retrieved() ->
+    {_, _, _} = do_put("/testdb"),
+    {_, _, PostBody} = do_post("/testdb", "{\"Company\":\"Example, Inc.\"}"),
+    DocId = responsebody_get_value(PostBody, <<"id">>),
+    {Status, _, Body} = do_get("/testdb/" ++ binary_to_list(DocId)),
+    {_, _, _} = do_delete("/testdb"),
+    JBody = jiffy:decode(Body, [return_maps]),
+    [?_assertEqual(200, Status),
+     ?_assert(responsebody_has_key(JBody, <<"_rev">>)),
+     ?_assertEqual(DocId, responsebody_get_value(JBody, <<"_id">>)),
+     ?_assertEqual(
+        <<"Example, Inc.">>,
+        responsebody_get_value(JBody, <<"Company">>)
+    )].
 
 
 %%% Helper functions
